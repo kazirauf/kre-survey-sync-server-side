@@ -41,6 +41,7 @@ async function run() {
 }
 run().catch(console.dir);
 const userCollection = client.db("SurveySync").collection("users");
+const surveyCreationCollection = client.db("SurveySync").collection("surveyCreation");
 // verify token
 
 const verifyToken = (req, res, next) => {
@@ -78,6 +79,63 @@ app.post('/jwt', async (req, res) => {
   res.send({ token });
 })
 
+
+app.post('/surveyCreation', verifyToken, async(req, res) => {
+  const item = req.body;
+  const result = await surveyCreationCollection.insertOne(item)
+  res.send(result)
+})
+
+app.get('/surveyCreation',  verifyToken,  async(req, res) => {
+  const result = await surveyCreationCollection.find().toArray()
+  res.send(result)
+})
+
+//  app.patch('/surveyCreation/Unpublish/:id', verifyToken, verifyAdmin, async (req, res) => {
+//     const id = req.params.id;
+//     const filter = { _id: new ObjectId(id) };
+//     const updatedDoc = {
+//       $set: {
+//         activity: 'unpublished'
+//       }
+//     }
+//     const result = await surveyCreationCollection.updateOne(filter, updatedDoc);
+//     res.send(result);
+//   })
+  app.get('/surveyCreation/:id', async(req, res) => {
+    const id = req.params.id;
+    const query = { _id: new ObjectId(id)};
+    const result = await surveyCreationCollection.findOne(query);
+    res.send(result);
+  })
+  app.put('/surveyCreation/Unpublish/:id', verifyToken, verifyAdmin, async (req, res) => {
+    const id = req.params.id;
+    const filter = { _id: new ObjectId(id) }
+    const option = { upsert: true }
+    const updatedProducts = req.body;
+    const products = {
+        $set: {
+          activity: updatedProducts.activity,
+          feedback: updatedProducts.feedback,
+            
+  
+        }
+    }
+    const result = await surveyCreationCollection.updateOne(filter, products, option);
+    res.send(result)
+  })
+ app.patch('/surveyCreation/publish/:id', verifyToken, verifyAdmin, async (req, res) => {
+    const id = req.params.id;
+    const filter = { _id: new ObjectId(id) };
+    const updatedDoc = {
+      $set: {
+        activity: 'published'
+      }
+    }
+    const result = await surveyCreationCollection.updateOne(filter, updatedDoc);
+    res.send(result);
+  })
+
 app.get('/users/admin/:email', verifyToken, async (req, res) => {
   const email = req.params.email;
 
@@ -94,6 +152,7 @@ app.get('/users/admin/:email', verifyToken, async (req, res) => {
   res.send({ admin });
 })
 
+
 app.post('/users', async(req, res) => {
    const user = req.body;
     const query = { email: user.email }
@@ -106,7 +165,7 @@ app.post('/users', async(req, res) => {
   
  })
 
- app.patch('/users/admin/:id', verifyAdmin, verifyToken, async (req, res) => {
+ app.patch('/users/admin/:id',  verifyToken, verifyAdmin, async (req, res) => {
     const id = req.params.id;
     const filter = { _id: new ObjectId(id) };
     const updatedDoc = {
@@ -117,12 +176,24 @@ app.post('/users', async(req, res) => {
     const result = await userCollection.updateOne(filter, updatedDoc);
     res.send(result);
   })
- app.patch('/users/surveyor/:id', verifyAdmin, verifyToken, async (req, res) => {
+ app.patch('/users/surveyor/:id',  verifyToken, verifyAdmin, async (req, res) => {
     const id = req.params.id;
     const filter = { _id: new ObjectId(id) };
     const updatedDoc = {
       $set: {
         role: 'surveyor'
+      }
+    }
+    const result = await userCollection.updateOne(filter, updatedDoc);
+    res.send(result);
+  }) 
+ app.patch('/users/proUser/:id', verifyToken, async (req, res) => {
+    const id = req.params.id;
+    const filter = { _id: new ObjectId(id) };
+    const updatedDoc = {
+      $set: {
+        role: 'pro user',
+        payment: 10
       }
     }
     const result = await userCollection.updateOne(filter, updatedDoc);
@@ -137,6 +208,10 @@ app.post('/users', async(req, res) => {
   })
 
  app.get('/users',  verifyToken, verifyAdmin, async(req, res) => {
+    const result = await userCollection.find().toArray()
+    res.send(result)
+ })
+ app.get('/paring', verifyToken, async(req, res) => {
     const result = await userCollection.find().toArray()
     res.send(result)
  })
